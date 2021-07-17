@@ -1,0 +1,15 @@
+name: Build
+on:
+  pull_request:
+  push:
+jobs:
+  build-qemu-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: nixbuild/nix-quick-install-action@v6
+        with:
+          nix_version: 2.4pre20210601_5985b8b
+          nix_conf: experimental-features = nix-command flakes
+      - name: nix build
+        run: nix build --print-build-logs --show-trace .#images.config.system.build.squashfs
