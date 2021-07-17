@@ -1,0 +1,14 @@
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 1dd6c4b2e8..9c9f9d1bc1 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -287,7 +287,8 @@ dtb-$(CONFIG_ARCH_ZYNQ) += \
+ 	zynq-zturn.dtb \
+ 	zynq-zturn-v5.dtb \
+ 	zynq-zybo.dtb \
+-	zynq-zybo-z7.dtb
++	zynq-zybo-z7.dtb \
++	zynq-ebaz4205.dtb
+ dtb-$(CONFIG_ARCH_ZYNQMP) += \
+ 	avnet-ultra96-rev1.dtb			\
+ 	avnet-ultrazedev-cc-v1.0-ultrazedev-som-v1.0.dtb	\

@@ -3,13 +3,6 @@
 with lib;
 
 let
-  modulesClosure = pkgs.makeModulesClosure {
-    # rootModules = [ "brcmfmac" "xhci-pci" "snd-usb-audio" ];
-    rootModules = [ ];
-    kernel = pkgs.linuxEmbeddedKernel;
-    firmware = pkgs.linuxEmbeddedKernel;
-    allowMissing = false;
-  };
 
   systemBuilder = ''
       mkdir -p $out/dev $out/lib $out/proc $out/run $out/sbin $out/sys $out/tmp $out/var
@@ -18,8 +11,8 @@ let
       ln -s ${config.system.build.etc}/etc $out/etc
       ln -s ${config.system.build.init} $out/sbin/init
 
-      ln -s ${modulesClosure}/lib/modules $out/lib/modules
-      ln -s ${modulesClosure}/lib/firmware $out/lib/firmware
+      ln -s ${config.system.build.modules}/lib/modules $out/lib/modules
+      ln -s ${config.system.build.modules}/lib/firmware $out/lib/firmware
 
       ln -s /etc/sv $out/var/service
 
@@ -44,20 +37,6 @@ let
   system = fold ({ oldDependency, newDependency }: drv:
       pkgs.replaceDependency { inherit oldDependency newDependency drv; }
     ) baseSystemAssertWarn config.system.replaceRuntimeDependencies;
-
-  pkgs2storeContents = l : map (x: { object = x; symlink = "none"; }) l;
-
-  squashfs = (pkgs.callPackage ./make-squashfs.nix {
-    contents = [
-      {
-        source = "${system}/.";
-        target = "./";
-      }
-    ];
-    storeContents = pkgs2storeContents [
-      system
-    ];
-  });
 
 in
 
@@ -117,17 +96,6 @@ in
 
   config = {
     system.build.root = system;
-    system.build.squashfs = squashfs;
-    system.build.systemImage = pkgs.stdenv.mkDerivation {
-      name = "systemImage";
-      inherit squashfs;
-      buildCommand =
-        ''
-          mkdir -p $out/kernel
-          cp $squashfs $out/squashfs.img
-          cp -r ${pkgs.linuxEmbeddedKernel} $out/kernel/
-        '';
-    };
   };
 
 }

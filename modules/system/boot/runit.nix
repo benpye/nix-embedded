@@ -2,57 +2,51 @@
 
 with lib;
 
+let
+
+  buildServiceFiles = name: value: {
+    "sv/${value.name}/run".source = pkgs.writeShellScript value.name value.script;
+
+    # Symlink to writable mount point
+    "sv/${value.name}/supervise".source = "/run/sv.${value.name}";
+  };
+
+  serviceOpts = { name, ... }: {
+    options = {
+      name = mkOption {
+        type = types.str;
+        description = ''
+          The name of the service. If undefined, the name of the attribute set
+          will be used.
+        '';
+      };
+
+      script = mkOption {
+        type = types.lines;
+        default = "";
+        description = "Shell commands executed as the service's main process.";
+      };
+    };
+
+    config = {
+      name = mkDefault name;
+    };
+
+  };
+
+in
 {
   options = {
-
+    runit.services = mkOption {
+      default = {};
+      type =  with types; attrsOf (submodule serviceOpts);
+      description = "Definition of init services.";
+    };
   };
 
   config =
   {
-    environment.etc."sv/getty_AMA0/run".source = pkgs.writeShellScript "getty"
-    ''
-      exec ${pkgs.busybox}/sbin/getty -n -l ${pkgs.runtimeShell} -L 115200 ttyAMA0 vt220
-    '';
-
-    environment.etc."sv/udhcpc_eth0/run".source = pkgs.writeShellScript "udhcpc"
-    ''
-      exec ${pkgs.busybox}/sbin/udhcpc --foreground --interface="eth0"
-    '';
-
-    # environment.etc."sv/librespot/run".source = pkgs.writeShellScript "librespot"
-    # ''
-    #   exec ${pkgs.librespot}/bin/librespot -n "Hello world!" -b 320 -c /run/librespot
-    # '';
-
-    # environment.etc."sv/shairport-sync/run".source = pkgs.writeShellScript "shairport-sync"
-    # ''
-    #   exec ${pkgs.shairport-sync}/bin/shairport-sync -u
-    # '';
-
-    # environment.etc."sv/dbus/run".source = pkgs.writeShellScript "dbus"
-    # ''
-    #   exec ${pkgs.dbus.daemon}/libexec/dbus-daemon-launch-helper
-    # '';
-
-    # environment.etc."sv/avahi/run".source = pkgs.writeShellScript "avahi"
-    # ''
-    #   exec ${pkgs.avahi}/sbin/avahi-daemon
-    # '';
-
-    environment.etc."resolv.conf".source = "/run/resolv.conf";
-    environment.etc."sv/getty_AMA0/supervise".source = "/run/sv.getty_AMA0";
-    environment.etc."sv/udhcpc_eth0/supervise".source = "/run/sv.udhcpc_eth0";
-    # environment.etc."sv/librespot/supervise".source = "/run/sv.librespot";
-    # environment.etc."sv/shairport-sync/supervise".source = "/run/sv.shairport-sync";
-    # environment.etc."sv/avahi/supervise".source = "/run/sv.avahi";
-    # environment.etc."sv/dbus/supervise".source = "/run/sv.dbus";
-
-    # environment.etc."avahi/avahi-daemon.conf".text = ''
-    # [server]
-    # host-name=HelloWorld
-    # use-ipv4=yes
-    # use-ipv6=yes
-    # '';
+    environment.etc = mkMerge (mapAttrsToList buildServiceFiles config.runit.services);
 
     system.build.init = pkgs.writeShellScript "init"
     ''
